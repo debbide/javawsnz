@@ -802,9 +802,9 @@ public class App {
         Thread tuicThread = new Thread(() -> {
             TuicInboundServer server = new TuicInboundServer(TuicConfig.load());
             try {
-                server.start().sync();
+                ChannelFuture bind = server.start().sync();
                 info("TUIC server listening on UDP port " + PORT);
-                server.closeFutureChannel().closeFuture().sync();
+                bind.channel().closeFuture().sync();
             } catch (Exception e) {
                 error("TUIC server failed: " + e.getMessage(), e);
             } finally {
