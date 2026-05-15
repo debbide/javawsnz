@@ -1,12 +1,6 @@
 name: Build jar
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'pom.xml'
   pull_request:
     branches:
       - main
