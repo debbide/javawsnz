@@ -26,7 +26,9 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 import java.net.InetSocketAddress;
 import java.security.MessageDigest;
+import java.util.ArrayDeque;
 import java.util.Date;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 final class TuicInboundServer implements AutoCloseable {
@@ -135,6 +137,7 @@ final class TuicInboundServer implements AutoCloseable {
         private Channel outbound;
         private boolean connected;
         private boolean commandHandled;
+        private final Queue<ByteBuf> pendingOutbound = new ArrayDeque<>();
 
         StreamHandler(TuicConfig config) {
             this.config = config;
@@ -157,8 +160,12 @@ final class TuicInboundServer implements AutoCloseable {
             if (!commandHandled) {
                 commandHandled = true;
                 handleCommand(ctx, content);
-            } else if (connected && outbound != null && outbound.isActive() && content.isReadable()) {
-                outbound.writeAndFlush(content.retain());
+            } else if (content.isReadable()) {
+                if (connected && outbound != null && outbound.isActive()) {
+                    outbound.writeAndFlush(content.retain());
+                } else {
+                    pendingOutbound.add(content.readRetainedSlice(content.readableBytes()));
+                }
             }
             if (fin) {
                 ctx.close();
@@ -199,6 +206,9 @@ final class TuicInboundServer implements AutoCloseable {
             Socks5Request request = TuicProtocol.connect(content);
             if (App.isBlockedDomain(request.host())) {
                 debug("TUIC blocked domain " + request.host());
+                if (request.initialPayload() != null) {
+                    request.initialPayload().release();
+                }
                 ctx.close();
                 return;
             }
@@ -230,15 +240,44 @@ final class TuicInboundServer implements AutoCloseable {
                 if (connectFuture.isSuccess()) {
                     connected = true;
                     debug("TUIC connect ok: " + request.host() + ":" + request.port() + " -> " + resolvedHost + ":" + request.port());
+                    if (request.initialPayload() != null) {
+                        if (request.initialPayload().isReadable()) {
+                            outbound.writeAndFlush(request.initialPayload().retain());
+                        }
+                        request.initialPayload().release();
+                    }
+                    flushPending();
                 } else {
                     debug("TUIC connect failed: " + request.host() + ":" + request.port() + " -> " + resolvedHost + ":" + request.port() + ", cause=" + connectFuture.cause());
+                    releasePending();
+                    if (request.initialPayload() != null) {
+                        request.initialPayload().release();
+                    }
                     ctx.close();
                 }
             });
         }
 
+        private void flushPending() {
+            if (outbound == null || !outbound.isActive()) {
+                return;
+            }
+            ByteBuf data;
+            while ((data = pendingOutbound.poll()) != null) {
+                outbound.writeAndFlush(data);
+            }
+        }
+
+        private void releasePending() {
+            ByteBuf data;
+            while ((data = pendingOutbound.poll()) != null) {
+                data.release();
+            }
+        }
+
         @Override
         public void channelInactive(ChannelHandlerContext ctx) {
+            releasePending();
             if (outbound != null && outbound.isActive()) {
                 outbound.close();
             }
@@ -246,6 +285,7 @@ final class TuicInboundServer implements AutoCloseable {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            releasePending();
             ctx.close();
         }
     }

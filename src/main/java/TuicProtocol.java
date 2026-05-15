@@ -66,7 +66,9 @@ final class TuicProtocol {
         if (in.readableBytes() < 2) {
             throw new IllegalArgumentException("TUIC connect command missing port");
         }
-        return new Socks5Request(host, in.readUnsignedShort());
+        int port = in.readUnsignedShort();
+        ByteBuf initialPayload = in.isReadable() ? in.readRetainedSlice(in.readableBytes()) : null;
+        return new Socks5Request(host, port, initialPayload);
     }
 
     static void heartbeat(ByteBuf in) {
