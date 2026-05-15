@@ -11,6 +11,15 @@ on:
     branches:
       - main
   workflow_dispatch:  # 手动触发
+    inputs:
+      quic_classifier:
+        description: 'Netty QUIC native classifier'
+        required: true
+        default: 'linux-aarch_64'
+        type: choice
+        options:
+          - linux-aarch_64
+          - linux-x86_64
 
 jobs:
   build-plugin-jar:
@@ -34,7 +43,12 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn clean package
+        run: |
+          if [ -n "${{ github.event.inputs.quic_classifier }}" ]; then
+            mvn clean package -Dquic.classifier=${{ github.event.inputs.quic_classifier }}
+          else
+            mvn clean package
+          fi
 
       - name: Get JAR file name
         id: jar-name
