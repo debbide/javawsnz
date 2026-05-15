@@ -1930,20 +1930,19 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
             return;
         }
         switch (payload[0]) {
-            case 0 -> writeTerminalInput(processInput, payload, session);
+            case 0 -> writeTerminalInput(processInput, payload);
             case 1 -> resizeTerminal(process, payload);
             default -> {
             }
         }
     }
 
-    private void writeTerminalInput(OutputStream processInput, byte[] payload, IoStreamSession session) {
+    private void writeTerminalInput(OutputStream processInput, byte[] payload) {
         try {
             processInput.write(payload, 1, payload.length - 1);
             processInput.flush();
         } catch (IOException | RuntimeException error) {
             LOGGER.log(Level.FINE, "terminal input write failed", error);
-            session.close();
         }
     }
 
@@ -1976,13 +1975,11 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
     private PtyProcess startShell() throws IOException {
         String[] command;
         if (isWindows()) {
-            command = commandExists("powershell.exe") ? new String[]{"powershell.exe"} : new String[]{"cmd.exe"};
+            command = commandExists("powershell.exe") ? new String[]{"powershell.exe", "-NoLogo"} : new String[]{"cmd.exe"};
+        } else if (commandExists("bash")) {
+            command = new String[]{"bash", "-i"};
         } else {
-            String shell = System.getenv("SHELL");
-            if (shell == null || shell.isBlank()) {
-                shell = commandExists("bash") ? "bash" : "sh";
-            }
-            command = new String[]{shell};
+            command = new String[]{"sh", "-i"};
         }
 
         Map<String, String> env = new HashMap<>(System.getenv());
