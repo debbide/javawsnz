@@ -19,9 +19,18 @@ final class TlsExporterTokenProvider {
         List<byte[]> candidates = new ArrayList<>();
         candidates.add(TuicProtocol.fallbackToken(config.uuid, config.password, ""));
 
-        if (quic.remoteAddress() instanceof java.net.InetSocketAddress remote) {
-            String authority = remote.getHostString();
-            if (authority != null && !authority.isBlank()) {
+        String authority = quic.remoteAddress() == null ? "" : quic.remoteAddress().toString();
+        if (!authority.isBlank()) {
+            int slash = authority.lastIndexOf('/');
+            if (slash >= 0 && slash < authority.length() - 1) {
+                authority = authority.substring(slash + 1);
+            }
+            int colon = authority.lastIndexOf(':');
+            if (colon > 0) {
+                authority = authority.substring(0, colon);
+            }
+            authority = authority.replace("[", "").replace("]", "").trim();
+            if (!authority.isBlank()) {
                 candidates.add(TuicProtocol.fallbackToken(config.uuid, config.password, authority));
             }
         }
