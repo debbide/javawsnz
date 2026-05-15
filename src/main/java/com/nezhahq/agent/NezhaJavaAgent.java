@@ -1929,26 +1929,48 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         if (payload.length == 0) {
             return;
         }
-        try {
-            switch (payload[0]) {
-                case 0 -> {
-                    processInput.write(payload, 1, payload.length - 1);
-                    processInput.flush();
-                }
-                case 1 -> {
-                    WindowSize size = objectMapper.readValue(payloadText(payload, 1), WindowSize.class);
-                    if (size.cols() > 0 && size.rows() > 0) {
-                        process.setWinSize(new WinSize(size.cols(), size.rows()));
-                    }
-                }
-                default -> {
-                    // Unknown terminal control message.
-                }
+        switch (payload[0]) {
+            case 0 -> writeTerminalInput(processInput, payload, session);
+            case 1 -> resizeTerminal(process, payload);
+            default -> {
             }
+        }
+    }
+
+    private void writeTerminalInput(OutputStream processInput, byte[] payload, IoStreamSession session) {
+        try {
+            processInput.write(payload, 1, payload.length - 1);
+            processInput.flush();
         } catch (IOException | RuntimeException error) {
-            LOGGER.log(Level.FINE, "terminal input failed", error);
+            LOGGER.log(Level.FINE, "terminal input write failed", error);
             session.close();
         }
+    }
+
+    private void resizeTerminal(PtyProcess process, byte[] payload) {
+        try {
+            WindowSize size = readWindowSize(payloadText(payload, 1));
+            if (size.cols() > 0 && size.rows() > 0) {
+                process.setWinSize(new WinSize(size.cols(), size.rows()));
+            }
+        } catch (IOException | RuntimeException error) {
+            LOGGER.log(Level.FINE, "terminal resize ignored", error);
+        }
+    }
+
+    private WindowSize readWindowSize(String text) throws IOException {
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) {
+            return new WindowSize(0, 0);
+        }
+        if (trimmed.charAt(0) == '{') {
+            return objectMapper.readValue(trimmed, WindowSize.class);
+        }
+        String[] parts = trimmed.split("[,xX\\s]+", 2);
+        if (parts.length == 2) {
+            return new WindowSize(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        }
+        return new WindowSize(0, 0);
     }
 
     private PtyProcess startShell() throws IOException {
