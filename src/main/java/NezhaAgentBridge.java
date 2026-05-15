@@ -2,6 +2,8 @@ import com.nezhahq.agent.NezhaJavaAgent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 final class NezhaAgentBridge {
     private static final String[] TLS_PORTS = {"443", "8443", "2096", "2087", "2083", "2053"};
@@ -10,6 +12,7 @@ final class NezhaAgentBridge {
     }
 
     static NezhaJavaAgent.RunningAgent start(String server, String port, String clientSecret, String uuid, boolean debug) {
+        silenceNezhaLogs();
         return NezhaJavaAgent.start(NezhaJavaAgent.AgentConfig.of(config(server, port, clientSecret, uuid, debug)));
     }
 
@@ -70,6 +73,12 @@ final class NezhaAgentBridge {
             }
         }
         return false;
+    }
+
+    private static void silenceNezhaLogs() {
+        Logger logger = Logger.getLogger("com.nezhahq.agent");
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.OFF);
     }
 
     private static boolean hasExplicitPort(String value) {
