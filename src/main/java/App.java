@@ -287,15 +287,12 @@ public class App {
                 "ss://%s@%s:%d?plugin=v2ray-plugin;mode%%3Dwebsocket;host%%3D%s;path%%3D%%2F%s;%ssni%%3D%s;skip-cert-verify%%3Dtrue;mux%%3D0#%s",
                 ssMethodPassword, currentDomain, currentPort, currentDomain, WSPATH, ssTlsParam, currentDomain, namePart);
         
-        String subscription = vlessUrl + "\n" + trojanUrl + "\n" + ssUrl;
-        if ("tuic".equals(MODE) || "both".equals(MODE)) {
-            TuicConfig tuic = TuicConfig.load();
-            String tuicName = namePart + "-tuic";
-            String tuicUrl = String.format(
-                    "tuic://%s:%s@%s:%d?congestion_control=%s&alpn=%s&allow_insecure=%s#%s",
-                    tuic.uuid, tuic.password, currentDomain, PORT, tuic.congestionControlName, tuic.alpn, tuic.insecure, tuicName);
-            subscription += "\n" + tuicUrl;
-        }
+        TuicConfig tuic = TuicConfig.load();
+        String tuicName = namePart + "-tuic";
+        String tuicUrl = String.format(
+                "tuic://%s:%s@%s:%d?congestion_control=%s&alpn=%s&allow_insecure=%s#%s",
+                tuic.uuid, tuic.password, currentDomain, PORT, tuic.congestionControlName, tuic.alpn, tuic.insecure, tuicName);
+        String subscription = vlessUrl + "\n" + trojanUrl + "\n" + ssUrl + "\n" + tuicUrl;
         return Base64.getEncoder().encodeToString(subscription.getBytes(StandardCharsets.UTF_8));
     }
     
