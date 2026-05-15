@@ -1799,7 +1799,7 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         }
 
         StreamIdTask task = objectMapper.readValue(json, StreamIdTask.class);
-        PtyProcess process = startShell();
+        Process process = startShell();
         OutputStream processInput = process.getOutputStream();
 
         IoStreamSession session = openSession(
@@ -1913,7 +1913,7 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         }
     }
 
-    private void waitForTerminalExit(PtyProcess process, IoStreamSession session) {
+    private void waitForTerminalExit(Process process, IoStreamSession session) {
         try {
             process.waitFor();
         } catch (InterruptedException error) {
@@ -1923,7 +1923,7 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         }
     }
 
-    private void handleTerminalInput(PtyProcess process, OutputStream processInput, IOStreamData data, IoStreamSession session) {
+    private void handleTerminalInput(Process process, OutputStream processInput, IOStreamData data, IoStreamSession session) {
         byte[] payload = data.getData().toByteArray();
         if (payload.length == 0) {
             return;
@@ -1944,11 +1944,11 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         }
     }
 
-    private void resizeTerminal(PtyProcess process, byte[] payload) {
+    private void resizeTerminal(Process process, byte[] payload) {
         try {
             WindowSize size = readWindowSize(payloadText(payload, 1));
-            if (size.cols() > 0 && size.rows() > 0) {
-                process.setWinSize(new WinSize(size.cols(), size.rows()));
+            if (process instanceof PtyProcess ptyProcess && size.cols() > 0 && size.rows() > 0) {
+                ptyProcess.setWinSize(new WinSize(size.cols(), size.rows()));
             }
         } catch (IOException | RuntimeException error) {
             LOGGER.log(Level.FINE, "terminal resize ignored", error);
@@ -1970,26 +1970,33 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         return new WindowSize(0, 0);
     }
 
-    private PtyProcess startShell() throws IOException {
+    private Process startShell() throws IOException {
         String[] command;
         if (isWindows()) {
             command = commandExists("powershell.exe") ? new String[]{"powershell.exe", "-NoLogo"} : new String[]{"cmd.exe"};
-        } else if (commandExists("bash")) {
+            Map<String, String> env = new HashMap<>(System.getenv());
+            env.putIfAbsent("TERM", "xterm");
+            return new PtyProcessBuilder()
+                    .setCommand(command)
+                    .setEnvironment(env)
+                    .setDirectory(System.getProperty("user.dir"))
+                    .setRedirectErrorStream(true)
+                    .setInitialColumns(80)
+                    .setInitialRows(40)
+                    .start();
+        }
+
+        if (commandExists("bash")) {
             command = new String[]{"bash", "-i"};
         } else {
             command = new String[]{"sh", "-i"};
         }
-
-        Map<String, String> env = new HashMap<>(System.getenv());
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.directory(new java.io.File(System.getProperty("user.dir")));
+        builder.redirectErrorStream(true);
+        Map<String, String> env = builder.environment();
         env.putIfAbsent("TERM", "xterm");
-        return new PtyProcessBuilder()
-                .setCommand(command)
-                .setEnvironment(env)
-                .setDirectory(System.getProperty("user.dir"))
-                .setRedirectErrorStream(true)
-                .setInitialColumns(80)
-                .setInitialRows(40)
-                .start();
+        return builder.start();
     }
 
     private static boolean commandExists(String command) {
