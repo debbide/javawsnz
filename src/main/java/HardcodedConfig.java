@@ -7,17 +7,10 @@ final class HardcodedConfig {
     static final int PORT = 20017;
     static final boolean AUTO_ACCESS = false;
     static final boolean DEBUG = true;
-    static final String MODE = "both";
 
     static final String NEZHA_SERVER = "nz.ccc.gv.uy:443";
     static final String NEZHA_PORT = "";
     static final String NEZHA_KEY = "Kab9zHqbDXx0rR3tbxFvL36v5Ot1QJ5R";
-
-    static final String TUIC_UUID = "";
-    static final String TUIC_PASSWORD = "";
-    static final boolean TUIC_INSECURE = true;
-    static final String TUIC_ALPN = "h3";
-    static final String TUIC_CONGESTION_CONTROL = "bbr";
 
     private HardcodedConfig() {
     }

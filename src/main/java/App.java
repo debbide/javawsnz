@@ -43,7 +43,6 @@ public class App {
     private static int PORT;
     private static boolean AUTO_ACCESS;
     private static boolean DEBUG;
-    private static String MODE;
 
     private static com.nezhahq.agent.NezhaJavaAgent.RunningAgent nezhaAgent;
 
@@ -100,7 +99,6 @@ public class App {
         PORT = HardcodedConfig.PORT;
         AUTO_ACCESS = HardcodedConfig.AUTO_ACCESS;
         DEBUG = HardcodedConfig.DEBUG;
-        MODE = HardcodedConfig.MODE.trim().toLowerCase(Locale.ROOT);
 
         PROTOCOL_UUID = UUID.replace("-", "");
         UUID_BYTES = hexStringToByteArray(PROTOCOL_UUID);
@@ -289,13 +287,8 @@ public class App {
         String ssUrl = String.format(
                 "ss://%s@%s:%d?plugin=v2ray-plugin;mode%%3Dwebsocket;host%%3D%s;path%%3D%%2F%s;%ssni%%3D%s;skip-cert-verify%%3Dtrue;mux%%3D0#%s",
                 ssMethodPassword, currentDomain, currentPort, currentDomain, WSPATH, ssTlsParam, currentDomain, namePart);
-        
-        TuicConfig tuic = TuicConfig.load();
-        String tuicName = namePart + "-tuic";
-        String tuicUrl = String.format(
-                "tuic://%s:%s@%s:%d?congestion_control=%s&alpn=%s&allow_insecure=%s#%s",
-                tuic.uuid, tuic.password, currentDomain, PORT, tuic.congestionControlName, tuic.alpn, tuic.insecure, tuicName);
-        String subscription = vlessUrl + "\n" + trojanUrl + "\n" + ssUrl + "\n" + tuicUrl;
+
+        String subscription = vlessUrl + "\n" + trojanUrl + "\n" + ssUrl;
         return Base64.getEncoder().encodeToString(subscription.getBytes(StandardCharsets.UTF_8));
     }
     
@@ -769,50 +762,7 @@ public class App {
     
     public static void main(String[] args) {
         loadConfig();
-
-        if ("tuic".equals(MODE)) {
-            runTuicServer();
-            return;
-        }
-        if ("both".equals(MODE)) {
-            startTuicServerBackground();
-        }
-
         runWebSocketServer();
-    }
-
-    private static void runTuicServer() {
-        getIp();
-        startNezha();
-        addAccessTask();
-        TuicInboundServer server = new TuicInboundServer(TuicConfig.load());
-        try {
-            ChannelFuture bind = server.start().sync();
-            info("TUIC server listening on UDP port " + PORT);
-            bind.channel().closeFuture().sync();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to start TUIC server", e);
-        } finally {
-            server.close();
-            cleanupNezha();
-        }
-    }
-
-    private static void startTuicServerBackground() {
-        Thread tuicThread = new Thread(() -> {
-            TuicInboundServer server = new TuicInboundServer(TuicConfig.load());
-            try {
-                ChannelFuture bind = server.start().sync();
-                info("TUIC server listening on UDP port " + PORT);
-                bind.channel().closeFuture().sync();
-            } catch (Exception e) {
-                error("TUIC server failed: " + e.getMessage(), e);
-            } finally {
-                server.close();
-            }
-        }, "tuic-server");
-        tuicThread.setDaemon(true);
-        tuicThread.start();
     }
 
     private static void runWebSocketServer() {
