@@ -26,6 +26,7 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 import java.net.InetSocketAddress;
 import java.security.MessageDigest;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 final class TuicInboundServer implements AutoCloseable {
@@ -33,6 +34,12 @@ final class TuicInboundServer implements AutoCloseable {
     private final EventLoopGroup group = new NioEventLoopGroup(1);
     private Channel udpChannel;
     private SelfSignedCertificate certificate;
+
+    private static void debug(String msg) {
+        if (HardcodedConfig.DEBUG) {
+            System.out.println(new Date() + " - DEBUG - " + msg);
+        }
+    }
 
     TuicInboundServer(TuicConfig config) {
         this.config = config;
@@ -98,11 +105,24 @@ final class TuicInboundServer implements AutoCloseable {
 
         boolean authenticate(QuicChannel quic, TuicProtocol.Authenticate auth) {
             if (!config.uuid.equals(auth.uuid())) {
+                debug("TUIC auth failed: uuid mismatch from " + quic.remoteAddress());
                 return false;
             }
             byte[] expected = TlsExporterTokenProvider.token(quic, config);
-            authenticated = MessageDigest.isEqual(expected, auth.token());
-            return authenticated;
+            if (MessageDigest.isEqual(expected, auth.token())) {
+                authenticated = true;
+                debug("TUIC auth ok by TLS exporter from " + quic.remoteAddress());
+                return true;
+            }
+            for (byte[] candidate : TlsExporterTokenProvider.fallbackCandidates(quic, config)) {
+                if (MessageDigest.isEqual(candidate, auth.token())) {
+                    authenticated = true;
+                    debug("TUIC auth ok by fallback token from " + quic.remoteAddress());
+                    return true;
+                }
+            }
+            debug("TUIC auth failed: token mismatch from " + quic.remoteAddress());
+            return false;
         }
 
         boolean authenticated() {
@@ -151,6 +171,7 @@ final class TuicInboundServer implements AutoCloseable {
                 TuicProtocol.Authenticate auth = TuicProtocol.authenticate(content);
                 ConnectionHandler connection = connectionHandler(ctx);
                 if (connection == null || !connection.authenticate((QuicChannel) ctx.channel().parent(), auth)) {
+                    debug("TUIC stream auth rejected, closing stream");
                     ctx.close();
                     return;
                 }
@@ -165,16 +186,19 @@ final class TuicInboundServer implements AutoCloseable {
 
             ConnectionHandler connection = connectionHandler(ctx);
             if (connection == null || !connection.authenticated()) {
+                debug("TUIC command before auth, closing stream");
                 ctx.close();
                 return;
             }
             if (command != TuicProtocol.COMMAND_CONNECT) {
+                debug("TUIC unsupported command " + command + ", closing stream");
                 ctx.close();
                 return;
             }
 
             Socks5Request request = TuicProtocol.connect(content);
             if (App.isBlockedDomain(request.host())) {
+                debug("TUIC blocked domain " + request.host());
                 ctx.close();
                 return;
             }
@@ -205,7 +229,9 @@ final class TuicInboundServer implements AutoCloseable {
             future.addListener(connectFuture -> {
                 if (connectFuture.isSuccess()) {
                     connected = true;
+                    debug("TUIC connect ok: " + request.host() + ":" + request.port() + " -> " + resolvedHost + ":" + request.port());
                 } else {
+                    debug("TUIC connect failed: " + request.host() + ":" + request.port() + " -> " + resolvedHost + ":" + request.port() + ", cause=" + connectFuture.cause());
                     ctx.close();
                 }
             });

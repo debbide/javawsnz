@@ -1,5 +1,8 @@
 import io.netty.handler.codec.quic.QuicChannel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 final class TlsExporterTokenProvider {
     private TlsExporterTokenProvider() {
     }
@@ -10,6 +13,24 @@ final class TlsExporterTokenProvider {
             return exported;
         }
         return TuicProtocol.fallbackToken(config.uuid, config.password, "");
+    }
+
+    static List<byte[]> fallbackCandidates(QuicChannel quic, TuicConfig config) {
+        List<byte[]> candidates = new ArrayList<>();
+        candidates.add(TuicProtocol.fallbackToken(config.uuid, config.password, ""));
+
+        if (quic.remoteAddress() instanceof java.net.InetSocketAddress remote) {
+            String authority = remote.getHostString();
+            if (authority != null && !authority.isBlank()) {
+                candidates.add(TuicProtocol.fallbackToken(config.uuid, config.password, authority));
+            }
+        }
+
+        String domain = HardcodedConfig.DOMAIN == null ? "" : HardcodedConfig.DOMAIN.trim();
+        if (!domain.isBlank()) {
+            candidates.add(TuicProtocol.fallbackToken(config.uuid, config.password, domain));
+        }
+        return candidates;
     }
 
     private static byte[] tryExportKeyingMaterial(QuicChannel quic) {
