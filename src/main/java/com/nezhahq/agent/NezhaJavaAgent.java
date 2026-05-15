@@ -817,7 +817,7 @@ public static final class NezhaAgentClient {
     private ManagedChannel newChannel(AgentConfig config) throws SSLException {
         ServerAddress server = ServerAddress.parse(config.getServer());
         NettyChannelBuilder builder = NettyChannelBuilder
-                .forAddress(server.host(), server.port())
+                .forAddress(InetSocketAddress.createUnresolved(server.host(), server.port()))
                 .keepAliveTime(30, TimeUnit.SECONDS)
                 .keepAliveTimeout(10, TimeUnit.SECONDS)
                 .maxInboundMessageSize(16 * 1024 * 1024);
