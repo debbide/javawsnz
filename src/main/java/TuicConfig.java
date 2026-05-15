@@ -42,7 +42,7 @@ final class TuicConfig {
         String server = HardcodedConfig.TUIC_SERVER;
         int port = HardcodedConfig.TUIC_PORT;
         String uuidText = HardcodedConfig.TUIC_UUID.isBlank() ? HardcodedConfig.UUID : HardcodedConfig.TUIC_UUID;
-        String password = HardcodedConfig.TUIC_PASSWORD;
+        String password = HardcodedConfig.TUIC_PASSWORD.isBlank() ? derivedPassword(uuidText) : HardcodedConfig.TUIC_PASSWORD;
         String sni = HardcodedConfig.TUIC_SNI.isBlank() ? server : HardcodedConfig.TUIC_SNI;
         boolean insecure = HardcodedConfig.TUIC_INSECURE;
         String alpn = HardcodedConfig.TUIC_ALPN;
@@ -56,10 +56,12 @@ final class TuicConfig {
         if (uuidText.isBlank()) {
             throw new IllegalArgumentException("HardcodedConfig.TUIC_UUID or HardcodedConfig.UUID must be set");
         }
-        if (password.isBlank()) {
-            throw new IllegalArgumentException("HardcodedConfig.TUIC_PASSWORD must be set");
-        }
         return new TuicConfig(server, port, UUID.fromString(uuidText), password, sni, insecure, alpn, bindHost, socksPort, congestion);
+    }
+
+    private static String derivedPassword(String uuidText) {
+        String compact = uuidText.replace("-", "");
+        return compact.substring(0, Math.min(16, compact.length()));
     }
 
     private static QuicCongestionControlAlgorithm congestion(String value) {

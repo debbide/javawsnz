@@ -77,7 +77,7 @@ original WebSocket server and the TUIC client in the same process.
 | TUIC_SERVER |  | TUIC server hostname or IP |
 | TUIC_PORT | 443 | TUIC server UDP port |
 | TUIC_UUID | UUID | TUIC UUID; falls back to `UUID` |
-| TUIC_PASSWORD |  | TUIC password |
+| TUIC_PASSWORD | UUID 前 16 位 | TUIC password; empty value derives from `TUIC_UUID`/`UUID` without dashes |
 | TUIC_SNI | TUIC_SERVER | TLS SNI |
 | TUIC_INSECURE | false | Skip certificate verification |
 | TUIC_ALPN | tuic | QUIC ALPN |
