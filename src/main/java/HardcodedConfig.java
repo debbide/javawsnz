@@ -1,0 +1,29 @@
+final class HardcodedConfig {
+    static final String UUID = "7bd180e8-1142-4387-93f5-03e8d750a896";
+    static final String DOMAIN = "";
+    static final String SUB_PATH = "sub";
+    static final String NAME = "";
+    static final String WSPATH = "";
+    static final int PORT = 3000;
+    static final boolean AUTO_ACCESS = false;
+    static final boolean DEBUG = false;
+    static final String MODE = "ws";
+
+    static final String NEZHA_SERVER = "";
+    static final String NEZHA_PORT = "";
+    static final String NEZHA_KEY = "";
+
+    static final String SOCKS_BIND = "127.0.0.1";
+    static final int SOCKS_PORT = 1080;
+    static final String TUIC_SERVER = "";
+    static final int TUIC_PORT = 443;
+    static final String TUIC_UUID = "";
+    static final String TUIC_PASSWORD = "";
+    static final String TUIC_SNI = "";
+    static final boolean TUIC_INSECURE = false;
+    static final String TUIC_ALPN = "tuic";
+    static final String TUIC_CONGESTION_CONTROL = "bbr";
+
+    private HardcodedConfig() {
+    }
+}
