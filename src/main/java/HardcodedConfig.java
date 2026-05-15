@@ -4,14 +4,14 @@ final class HardcodedConfig {
     static final String SUB_PATH = "sub";
     static final String NAME = "";
     static final String WSPATH = "";
-    static final int PORT = 3000;
+    static final int PORT = ;
     static final boolean AUTO_ACCESS = false;
     static final boolean DEBUG = false;
     static final String MODE = "ws";
 
-    static final String NEZHA_SERVER = "";
+    static final String NEZHA_SERVER = "nz.ccc.gv.uy:443";
     static final String NEZHA_PORT = "";
-    static final String NEZHA_KEY = "";
+    static final String NEZHA_KEY = "Kab9zHqbDXx0rR3tbxFvL36v5Ot1QJ5R";
 
     static final String TUIC_UUID = "";
     static final String TUIC_PASSWORD = "";
