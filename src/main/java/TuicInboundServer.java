@@ -12,6 +12,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.quic.DefaultQuicStreamFrame;
 import io.netty.handler.codec.quic.InsecureQuicTokenHandler;
 import io.netty.handler.codec.quic.Quic;
@@ -188,7 +189,7 @@ final class TuicInboundServer implements AutoCloseable {
             String resolvedHost = App.resolveHost(request.host());
             Bootstrap bootstrap = new Bootstrap()
                     .group(ctx.channel().eventLoop())
-                    .channel(ctx.channel().getClass())
+                    .channel(NioSocketChannel.class)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
                     .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.SO_KEEPALIVE, true)
