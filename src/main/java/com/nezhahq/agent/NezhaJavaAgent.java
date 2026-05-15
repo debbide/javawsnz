@@ -1810,7 +1810,6 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
         );
 
         executor.execute(() -> copyInputToStream(process.getInputStream(), session, "terminal", false));
-        executor.execute(() -> copyInputToStream(process.getErrorStream(), session, "terminal error", false));
         executor.execute(() -> waitForTerminalExit(process, session));
     }
 
@@ -1987,6 +1986,9 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
                 .setCommand(command)
                 .setEnvironment(env)
                 .setDirectory(System.getProperty("user.dir"))
+                .setRedirectErrorStream(true)
+                .setInitialColumns(80)
+                .setInitialRows(40)
                 .start();
     }
 
