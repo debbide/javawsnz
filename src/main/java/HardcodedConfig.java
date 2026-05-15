@@ -4,7 +4,7 @@ final class HardcodedConfig {
     static final String SUB_PATH = "sub";
     static final String NAME = "";
     static final String WSPATH = "";
-    static final int PORT = ;
+    static final int PORT = 3000;
     static final boolean AUTO_ACCESS = false;
     static final boolean DEBUG = false;
     static final String MODE = "ws";
