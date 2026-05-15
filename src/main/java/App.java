@@ -77,7 +77,10 @@ public class App {
         System.out.println(new Date() + " - " + level + " - " + msg);
     }
     
-    private static void info(String msg) { log("INFO", msg); }
+    private static void info(String msg) {
+        if (!msg.startsWith("public IP:")) return;
+        log("INFO", msg);
+    }
     private static void error(String msg) { log("ERROR", msg); }
     private static void error(String msg, Throwable t) { 
         log("ERROR", msg);
