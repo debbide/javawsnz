@@ -815,8 +815,9 @@ public static final class NezhaAgentClient {
     }
 
     private ManagedChannel newChannel(AgentConfig config) throws SSLException {
+        ServerAddress server = ServerAddress.parse(config.getServer());
         NettyChannelBuilder builder = NettyChannelBuilder
-                .forTarget(config.getServer())
+                .forAddress(server.host(), server.port())
                 .keepAliveTime(30, TimeUnit.SECONDS)
                 .keepAliveTimeout(10, TimeUnit.SECONDS)
                 .maxInboundMessageSize(16 * 1024 * 1024);
@@ -831,6 +832,27 @@ public static final class NezhaAgentClient {
             builder.useTransportSecurity();
         }
         return builder.build();
+    }
+
+    private record ServerAddress(String host, int port) {
+        static ServerAddress parse(String value) {
+            String server = value == null ? "" : value.trim();
+            if (server.isBlank()) {
+                throw new IllegalArgumentException("server address should not be empty");
+            }
+            if (server.startsWith("[")) {
+                int closing = server.indexOf(']');
+                if (closing < 0 || closing + 2 > server.length() || server.charAt(closing + 1) != ':') {
+                    throw new IllegalArgumentException("server address must include port");
+                }
+                return new ServerAddress(server.substring(1, closing), Integer.parseInt(server.substring(closing + 2)));
+            }
+            int colon = server.lastIndexOf(':');
+            if (colon <= 0 || colon == server.length() - 1) {
+                throw new IllegalArgumentException("server address must include port");
+            }
+            return new ServerAddress(server.substring(0, colon), Integer.parseInt(server.substring(colon + 1)));
+        }
     }
 
     private long reportHost(NezhaServiceGrpc.NezhaServiceBlockingStub blockingStub, MonitorService monitor) {
