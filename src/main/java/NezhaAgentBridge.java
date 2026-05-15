@@ -76,7 +76,12 @@ final class NezhaAgentBridge {
     }
 
     private static void silenceNezhaLogs() {
-        Logger logger = Logger.getLogger("com.nezhahq.agent");
+        silenceLogger("com.nezhahq.agent");
+        silenceLogger("com.pty4j");
+    }
+
+    private static void silenceLogger(String name) {
+        Logger logger = Logger.getLogger(name);
         logger.setUseParentHandlers(false);
         logger.setLevel(Level.OFF);
     }

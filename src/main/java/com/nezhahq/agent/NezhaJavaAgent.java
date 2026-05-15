@@ -1809,7 +1809,9 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
                 process::destroyForcibly
         );
 
-        executor.execute(() -> copyInputToStream(process.getInputStream(), session, "terminal"));
+        executor.execute(() -> copyInputToStream(process.getInputStream(), session, "terminal", false));
+        executor.execute(() -> copyInputToStream(process.getErrorStream(), session, "terminal error", false));
+        executor.execute(() -> waitForTerminalExit(process, session));
     }
 
     private IoStreamSession openSession(
@@ -1888,6 +1890,10 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
     }
 
     private void copyInputToStream(InputStream input, IoStreamSession session, String label) {
+        copyInputToStream(input, session, label, true);
+    }
+
+    private void copyInputToStream(InputStream input, IoStreamSession session, String label, boolean closeWhenDone) {
         try (input) {
             byte[] buffer = new byte[BUFFER_SIZE];
             int read;
@@ -1901,6 +1907,18 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
                 session.send(errorMessage(error));
             }
             LOGGER.log(Level.FINE, label + " input copy failed", error);
+        } finally {
+            if (closeWhenDone) {
+                session.close();
+            }
+        }
+    }
+
+    private void waitForTerminalExit(PtyProcess process, IoStreamSession session) {
+        try {
+            process.waitFor();
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
         } finally {
             session.close();
         }
