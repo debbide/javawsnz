@@ -35,7 +35,7 @@ final class TuicConfig {
             throw new IllegalArgumentException("HardcodedConfig.TUIC_UUID or HardcodedConfig.UUID must be set");
         }
         String password = HardcodedConfig.TUIC_PASSWORD.isBlank() ? derivedPassword(uuidText) : HardcodedConfig.TUIC_PASSWORD;
-        String alpn = HardcodedConfig.TUIC_ALPN.isBlank() ? "tuic" : HardcodedConfig.TUIC_ALPN;
+        String alpn = HardcodedConfig.TUIC_ALPN.isBlank() ? "h3" : HardcodedConfig.TUIC_ALPN;
         String congestionName = HardcodedConfig.TUIC_CONGESTION_CONTROL.isBlank()
                 ? "bbr"
                 : HardcodedConfig.TUIC_CONGESTION_CONTROL.toLowerCase(Locale.ROOT);

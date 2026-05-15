@@ -16,7 +16,7 @@ final class HardcodedConfig {
     static final String TUIC_UUID = "";
     static final String TUIC_PASSWORD = "";
     static final boolean TUIC_INSECURE = true;
-    static final String TUIC_ALPN = "tuic";
+    static final String TUIC_ALPN = "h3";
     static final String TUIC_CONGESTION_CONTROL = "bbr";
 
     private HardcodedConfig() {

@@ -75,7 +75,7 @@ This project provides TUIC v5 server inbound over UDP while keeping the original
 | TUIC_UUID | UUID | TUIC UUID; falls back to `UUID` |
 | TUIC_PASSWORD | UUID 前 16 位 | TUIC password; empty value derives from `TUIC_UUID`/`UUID` without dashes |
 | TUIC_INSECURE | false | Subscription hint for clients when using the built-in self-signed certificate |
-| TUIC_ALPN | tuic | QUIC ALPN |
+| TUIC_ALPN | h3 | QUIC ALPN |
 | TUIC_CONGESTION_CONTROL | bbr | `bbr`, `cubic`, or `reno` |
 
 The built-in TUIC server uses an in-memory self-signed certificate and does not write certificate files. TUIC clients usually need insecure/allow-insecure enabled unless you later wire in a trusted certificate.
