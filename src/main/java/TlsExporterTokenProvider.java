@@ -8,7 +8,7 @@ final class TlsExporterTokenProvider {
     }
 
     static byte[] token(QuicChannel quic, TuicConfig config) {
-        byte[] exported = tryExportKeyingMaterial(quic);
+        byte[] exported = tryExportKeyingMaterial(quic, config);
         if (exported != null) {
             return exported;
         }
@@ -42,9 +42,11 @@ final class TlsExporterTokenProvider {
         return candidates;
     }
 
-    private static byte[] tryExportKeyingMaterial(QuicChannel quic) {
+    private static byte[] tryExportKeyingMaterial(QuicChannel quic, TuicConfig config) {
         try {
             Object engine = quic.sslEngine();
+            byte[] context = config.password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            String label = TuicProtocol.exporterLabel(config.uuid);
             for (String methodName : new String[]{"exportKeyingMaterial", "exportKeyingMaterialData"}) {
                 for (java.lang.reflect.Method method : engine.getClass().getMethods()) {
                     if (!method.getName().equals(methodName) || method.getReturnType() != byte[].class) {
@@ -52,10 +54,10 @@ final class TlsExporterTokenProvider {
                     }
                     Class<?>[] types = method.getParameterTypes();
                     if (types.length == 3 && types[0] == String.class && types[1] == byte[].class && types[2] == int.class) {
-                        return (byte[]) method.invoke(engine, TuicProtocol.EXPORTER_LABEL, null, TuicProtocol.EXPORTER_LENGTH);
+                        return (byte[]) method.invoke(engine, label, context, TuicProtocol.EXPORTER_LENGTH);
                     }
                     if (types.length == 2 && types[0] == String.class && types[1] == int.class) {
-                        return (byte[]) method.invoke(engine, TuicProtocol.EXPORTER_LABEL, TuicProtocol.EXPORTER_LENGTH);
+                        return (byte[]) method.invoke(engine, label, TuicProtocol.EXPORTER_LENGTH);
                     }
                 }
             }

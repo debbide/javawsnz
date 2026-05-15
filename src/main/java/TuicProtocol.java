@@ -18,7 +18,9 @@ final class TuicProtocol {
     static final byte COMMAND_AUTHENTICATE = 0x00;
     static final byte COMMAND_CONNECT = 0x01;
     static final byte COMMAND_HEARTBEAT = 0x04;
-    static final String EXPORTER_LABEL = "EXPORTER-tuic token";
+    static String exporterLabel(UUID uuid) {
+        return uuid.toString();
+    }
     static final int EXPORTER_LENGTH = 32;
 
     private TuicProtocol() {
@@ -91,7 +93,7 @@ final class TuicProtocol {
             byte[] key = digest.digest(password.getBytes(StandardCharsets.UTF_8));
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
-            mac.update(EXPORTER_LABEL.getBytes(StandardCharsets.UTF_8));
+            mac.update(exporterLabel(uuid).getBytes(StandardCharsets.UTF_8));
             mac.update(uuid.toString().getBytes(StandardCharsets.UTF_8));
             mac.update((byte) 0);
             mac.update(sni.getBytes(StandardCharsets.UTF_8));
