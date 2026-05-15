@@ -62,32 +62,23 @@ function getRandomArray(array) {
 }
 ```
 
-## TUIC client mode
+## TUIC server inbound
 
-This fork adds a Java TUIC client path without removing the original WebSocket server.
+This project provides TUIC v5 server inbound over UDP while keeping the original WebSocket server.
 
-Set `MODE=tuic` in `HardcodedConfig` to run only the local SOCKS5 to TUIC client. Set `MODE=both` to run the
-original WebSocket server and the TUIC client in the same process.
+`PORT` is shared by number: TCP `PORT` serves HTTP/WebSocket proxy traffic, and UDP `PORT` serves TUIC/QUIC traffic. Set `MODE=tuic` in `HardcodedConfig` to run only TUIC server inbound. Set `MODE=both` to run WebSocket proxy and TUIC server inbound in the same process.
 
 | HardcodedConfig field | Default | Description |
 | --- | --- | --- |
 | MODE | ws | `ws`, `tuic`, or `both` |
-| SOCKS_BIND | 127.0.0.1 | Local SOCKS5 bind address |
-| SOCKS_PORT | 1080 | Local SOCKS5 port |
-| TUIC_SERVER |  | TUIC server hostname or IP |
-| TUIC_PORT | 443 | TUIC server UDP port |
+| PORT | 3000 | TCP port for HTTP/WS and UDP port for TUIC |
 | TUIC_UUID | UUID | TUIC UUID; falls back to `UUID` |
 | TUIC_PASSWORD | UUID 前 16 位 | TUIC password; empty value derives from `TUIC_UUID`/`UUID` without dashes |
-| TUIC_SNI | TUIC_SERVER | TLS SNI |
-| TUIC_INSECURE | false | Skip certificate verification |
+| TUIC_INSECURE | false | Subscription hint for clients when using the built-in self-signed certificate |
 | TUIC_ALPN | tuic | QUIC ALPN |
 | TUIC_CONGESTION_CONTROL | bbr | `bbr`, `cubic`, or `reno` |
 
-Implemented so far: Netty QUIC integration, local SOCKS5 CONNECT inbound, TUIC v5
-`Authenticate` / `Connect` / `Heartbeat` command encoding, and TCP stream forwarding.
-TUIC v5 standard authentication depends on TLS exporter keying material. Netty QUIC does
-not currently expose a stable public exporter API, so this is isolated in
-`TlsExporterTokenProvider`; real TUIC server end-to-end validation is still required.
+The built-in TUIC server uses an in-memory self-signed certificate and does not write certificate files. TUIC clients usually need insecure/allow-insecure enabled unless you later wire in a trusted certificate.
 
 版权所有 ©2026 `eooce`
 

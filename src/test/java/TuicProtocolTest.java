@@ -31,6 +31,21 @@ class TuicProtocolTest {
     }
 
     @Test
+    void parsesAuthenticateCommand() {
+        UUID uuid = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        byte[] token = new byte[32];
+        for (int i = 0; i < token.length; i++) {
+            token[i] = (byte) (31 - i);
+        }
+        ByteBuf encoded = TuicProtocol.authenticate(Unpooled.buffer().alloc(), uuid, token);
+
+        TuicProtocol.Authenticate parsed = TuicProtocol.authenticate(encoded);
+
+        assertEquals(uuid, parsed.uuid());
+        assertArrayEquals(token, parsed.token());
+    }
+
+    @Test
     void encodesConnectDomainCommand() {
         ByteBuf encoded = TuicProtocol.connect(Unpooled.buffer().alloc(), new Socks5Request("example.com", 443));
 
@@ -43,20 +58,37 @@ class TuicProtocolTest {
     }
 
     @Test
-    void parsesSocks5ConnectRequest() {
-        ByteBuf request = Unpooled.buffer();
-        request.writeByte(0x05);
-        request.writeByte(0x01);
-        request.writeByte(0x00);
-        request.writeByte(0x03);
-        request.writeByte(11);
-        request.writeCharSequence("example.com", StandardCharsets.UTF_8);
-        request.writeShort(443);
+    void parsesConnectDomainCommand() {
+        ByteBuf encoded = TuicProtocol.connect(Unpooled.buffer().alloc(), new Socks5Request("example.com", 443));
 
-        Socks5Request parsed = Socks5InboundServer.Handler.parseRequest(request);
+        Socks5Request parsed = TuicProtocol.connect(encoded);
 
         assertEquals("example.com", parsed.host());
         assertEquals(443, parsed.port());
+    }
+
+    @Test
+    void parsesConnectIpv4Command() {
+        ByteBuf encoded = TuicProtocol.connect(Unpooled.buffer().alloc(), new Socks5Request("1.2.3.4", 8443));
+
+        Socks5Request parsed = TuicProtocol.connect(encoded);
+
+        assertEquals("1.2.3.4", parsed.host());
+        assertEquals(8443, parsed.port());
+    }
+
+    @Test
+    void parsesHeartbeatCommand() {
+        ByteBuf encoded = TuicProtocol.heartbeat(Unpooled.buffer().alloc());
+
+        TuicProtocol.heartbeat(encoded);
+
+        assertEquals(0, encoded.readableBytes());
+    }
+
+    @Test
+    void derivesPasswordFromUuid() {
+        assertEquals("7bd180e811424387", TuicConfig.derivedPassword("7bd180e8-1142-4387-93f5-03e8d750a896"));
     }
 
     private static byte[] hex(String value) {

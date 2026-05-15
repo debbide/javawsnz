@@ -13,14 +13,9 @@ final class HardcodedConfig {
     static final String NEZHA_PORT = "";
     static final String NEZHA_KEY = "";
 
-    static final String SOCKS_BIND = "127.0.0.1";
-    static final int SOCKS_PORT = 1080;
-    static final String TUIC_SERVER = "";
-    static final int TUIC_PORT = 443;
     static final String TUIC_UUID = "";
     static final String TUIC_PASSWORD = "";
-    static final String TUIC_SNI = "";
-    static final boolean TUIC_INSECURE = false;
+    static final boolean TUIC_INSECURE = true;
     static final String TUIC_ALPN = "tuic";
     static final String TUIC_CONGESTION_CONTROL = "bbr";
 

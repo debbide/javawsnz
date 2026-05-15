@@ -9,7 +9,7 @@ final class TlsExporterTokenProvider {
         if (exported != null) {
             return exported;
         }
-        return TuicProtocol.fallbackToken(config.uuid, config.password, config.sni);
+        return TuicProtocol.fallbackToken(config.uuid, config.password, "");
     }
 
     private static byte[] tryExportKeyingMaterial(QuicChannel quic) {

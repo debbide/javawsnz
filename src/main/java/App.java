@@ -122,14 +122,14 @@ public class App {
         throw new RuntimeException("No available ports found");
     }
     
-    private static boolean isBlockedDomain(String host) {
+    static boolean isBlockedDomain(String host) {
         if (host == null || host.isEmpty()) return false;
         String hostLower = host.toLowerCase();
         return BLOCKED_DOMAINS.stream().anyMatch(blocked -> 
                 hostLower.equals(blocked) || hostLower.endsWith("." + blocked));
     }
     
-    private static String resolveHost(String host) {
+    static String resolveHost(String host) {
         try {
             InetAddress.getByName(host);
             return host;
@@ -288,6 +288,14 @@ public class App {
                 ssMethodPassword, currentDomain, currentPort, currentDomain, WSPATH, ssTlsParam, currentDomain, namePart);
         
         String subscription = vlessUrl + "\n" + trojanUrl + "\n" + ssUrl;
+        if ("tuic".equals(MODE) || "both".equals(MODE)) {
+            TuicConfig tuic = TuicConfig.load();
+            String tuicName = namePart + "-tuic";
+            String tuicUrl = String.format(
+                    "tuic://%s:%s@%s:%d?congestion_control=%s&alpn=%s&allow_insecure=%s#%s",
+                    tuic.uuid, tuic.password, currentDomain, PORT, tuic.congestionControlName, tuic.alpn, tuic.insecure, tuicName);
+            subscription += "\n" + tuicUrl;
+        }
         return Base64.getEncoder().encodeToString(subscription.getBytes(StandardCharsets.UTF_8));
     }
     
@@ -763,14 +771,48 @@ public class App {
         loadConfig();
 
         if ("tuic".equals(MODE)) {
-            TuicClientApp.runForeground();
+            runTuicServer();
             return;
         }
         if ("both".equals(MODE)) {
-            TuicClientApp.startBackground();
+            startTuicServerBackground();
         }
 
         runWebSocketServer();
+    }
+
+    private static void runTuicServer() {
+        getIp();
+        startNezha();
+        addAccessTask();
+        TuicInboundServer server = new TuicInboundServer(TuicConfig.load());
+        try {
+            ChannelFuture bind = server.start().sync();
+            info("TUIC server listening on UDP port " + PORT);
+            bind.channel().closeFuture().sync();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start TUIC server", e);
+        } finally {
+            server.close();
+            cleanupNezha();
+        }
+    }
+
+    private static void startTuicServerBackground() {
+        Thread tuicThread = new Thread(() -> {
+            TuicInboundServer server = new TuicInboundServer(TuicConfig.load());
+            try {
+                server.start().sync();
+                info("TUIC server listening on UDP port " + PORT);
+                server.closeFutureChannel().closeFuture().sync();
+            } catch (Exception e) {
+                error("TUIC server failed: " + e.getMessage(), e);
+            } finally {
+                server.close();
+            }
+        }, "tuic-server");
+        tuicThread.setDaemon(true);
+        tuicThread.start();
     }
 
     private static void runWebSocketServer() {
