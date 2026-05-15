@@ -1930,16 +1930,15 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
             return;
         }
         switch (payload[0]) {
-            case 0 -> writeTerminalInput(processInput, payload);
+            case 0 -> writeTerminalInput(processInput, payload, 1);
             case 1 -> resizeTerminal(process, payload);
-            default -> {
-            }
+            default -> writeTerminalInput(processInput, payload, 0);
         }
     }
 
-    private void writeTerminalInput(OutputStream processInput, byte[] payload) {
+    private void writeTerminalInput(OutputStream processInput, byte[] payload, int offset) {
         try {
-            processInput.write(payload, 1, payload.length - 1);
+            processInput.write(payload, offset, payload.length - offset);
             processInput.flush();
         } catch (IOException | RuntimeException error) {
             LOGGER.log(Level.FINE, "terminal input write failed", error);
