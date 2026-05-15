@@ -34,7 +34,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -f ../pom.xml -pl java-ws-main -am clean package
+        run: mvn clean package
 
       - name: Get JAR file name
         id: jar-name
@@ -52,7 +52,7 @@ jobs:
             ## Info
             Java serverless build vless/trojan/shadowsocks on java server,no need core.
             Download the JAR file below and upload it in your server's root directory.
-            You can create or upload a .env file in the root directory to customize variables.
+            Runtime settings are hardcoded in src/main/java/HardcodedConfig.java.
             
           files: ${{ steps.jar-name.outputs.jar_file }}
           make_latest: true
