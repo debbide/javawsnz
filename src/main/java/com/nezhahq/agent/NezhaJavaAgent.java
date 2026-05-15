@@ -1971,32 +1971,36 @@ public static final class StreamTaskRunner implements StreamTaskLauncher {
     }
 
     private Process startShell() throws IOException {
-        String[] command;
+        String shell = commandExists("bash") ? "bash" : "sh";
         if (isWindows()) {
-            command = commandExists("powershell.exe") ? new String[]{"powershell.exe", "-NoLogo"} : new String[]{"cmd.exe"};
-            Map<String, String> env = new HashMap<>(System.getenv());
-            env.putIfAbsent("TERM", "xterm");
-            return new PtyProcessBuilder()
-                    .setCommand(command)
-                    .setEnvironment(env)
-                    .setDirectory(System.getProperty("user.dir"))
-                    .setRedirectErrorStream(true)
-                    .setInitialColumns(80)
-                    .setInitialRows(40)
-                    .start();
+            String[] command = commandExists("powershell.exe") ? new String[]{"powershell.exe", "-NoLogo"} : new String[]{"cmd.exe"};
+            return startPtyProcess(command);
         }
 
-        if (commandExists("bash")) {
-            command = new String[]{"bash", "-i"};
-        } else {
-            command = new String[]{"sh", "-i"};
+        if (commandExists("script")) {
+            ProcessBuilder builder = new ProcessBuilder("script", "-q", "-f", "-c", shell + " -i", "/dev/null");
+            builder.directory(new java.io.File(System.getProperty("user.dir")));
+            builder.redirectErrorStream(true);
+            Map<String, String> env = builder.environment();
+            env.putIfAbsent("TERM", "xterm");
+            env.putIfAbsent("SHELL", shell);
+            return builder.start();
         }
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.directory(new java.io.File(System.getProperty("user.dir")));
-        builder.redirectErrorStream(true);
-        Map<String, String> env = builder.environment();
+
+        return startPtyProcess(new String[]{shell, "-i"});
+    }
+
+    private Process startPtyProcess(String[] command) throws IOException {
+        Map<String, String> env = new HashMap<>(System.getenv());
         env.putIfAbsent("TERM", "xterm");
-        return builder.start();
+        return new PtyProcessBuilder()
+                .setCommand(command)
+                .setEnvironment(env)
+                .setDirectory(System.getProperty("user.dir"))
+                .setRedirectErrorStream(true)
+                .setInitialColumns(80)
+                .setInitialRows(40)
+                .start();
     }
 
     private static boolean commandExists(String command) {
