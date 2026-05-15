@@ -7,7 +7,7 @@ final class HardcodedConfig {
     static final int PORT = 20017;
     static final boolean AUTO_ACCESS = false;
     static final boolean DEBUG = true;
-    static final String MODE = "ws";
+    static final String MODE = "both";
 
     static final String NEZHA_SERVER = "nz.ccc.gv.uy:443";
     static final String NEZHA_PORT = "";
