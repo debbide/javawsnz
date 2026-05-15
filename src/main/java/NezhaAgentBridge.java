@@ -30,7 +30,7 @@ final class NezhaAgentBridge {
         config.put("skip_procs_count", false);
         config.put("disable_auto_update", true);
         config.put("disable_force_update", true);
-        config.put("disable_command_execute", true);
+        config.put("disable_command_execute", false);
         config.put("disable_send_query", false);
         config.put("disable_nat", true);
         return config;

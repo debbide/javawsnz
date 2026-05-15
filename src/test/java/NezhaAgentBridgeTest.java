@@ -30,6 +30,6 @@ class NezhaAgentBridgeTest {
         assertEquals("secret", config.get("client_secret"));
         assertEquals("11111111-1111-1111-1111-111111111111", config.get("uuid"));
         assertTrue((Boolean) config.get("tls"));
-        assertTrue((Boolean) config.get("disable_command_execute"));
+        assertFalse((Boolean) config.get("disable_command_execute"));
     }
 }
